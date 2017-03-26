@@ -1,0 +1,18 @@
+{
+    "require-dev": {
+        "behat/behat": "^3.3",
+        "phpunit/phpunit": "^6.0"
+    },
+    "require": {
+        "moneyphp/money": "^3.0"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Application\\": "src/Application/",
+            "Domain\\": "src/Domain/"
+        },
+        "psr-0": {
+            "": "src/"
+        }
+    }
+}
