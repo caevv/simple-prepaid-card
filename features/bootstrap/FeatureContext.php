@@ -22,11 +22,6 @@ class FeatureContext implements Context
     private $card;
 
     /**
-     * @var Merchant
-     */
-    private $merchant;
-
-    /**
      * @var Transaction
      */
     private $transaction;
@@ -37,25 +32,49 @@ class FeatureContext implements Context
     private $capture;
 
     /**
+     * @Transform :amount
+     */
+    public function makeAmountGBP($amount)
+    {
+        return Money::GBP($amount);
+    }
+
+    /**
+     * @Transform :amountAvailable
+     */
+    public function makeAvailableGBPAmount($amount)
+    {
+        return $this->makeAmountGBP($amount);
+    }
+
+    /**
+     * @Transform :amountBlocked
+     */
+    public function makeBlockedGBPAmount($amount)
+    {
+        return $this->makeAmountGBP($amount);
+    }
+
+    /**
      * @Given I have a card with :amount GBP in balance
      */
-    public function iHaveACardWithGBPInBalance($amount)
+    public function iHaveACardWithGBPInBalance(Money $amount)
     {
-        $this->card = new Card(Money::GBP($amount), Money::GBP(0));
+        $this->card = new Card($amount, $this->makeAmountGBP(0));
     }
 
     /**
      * @When I top up :amount pounds on my card
      */
-    public function iTopUpPoundsOnMyCard($amount)
+    public function iTopUpPoundsOnMyCard(Money $amount)
     {
-        $this->card->topUp(Money::GBP($amount));
+        $this->card->topUp($amount);
     }
 
     /**
      * @Then I should have :amount pounds on my balance
      */
-    public function iShouldHavePoundsOnMyBalance($amount)
+    public function iShouldHavePoundsOnMyBalance(Money $amount)
     {
         Assert::assertInstanceOf(Money::class, $this->card->getAvailableBalance());
 
@@ -65,67 +84,67 @@ class FeatureContext implements Context
     /**
      * @When I go to a shop and ask to buy something for :amount GBP with my card
      */
-    public function iGoToAShopAndAskToBuySomethingForGbpWithMyCard($amount)
+    public function iGoToAShopAndAskToBuySomethingForGbpWithMyCard(Money $amount)
     {
-        $this->transaction = $this->card->buy(Money::GBP($amount), new Merchant());
+        $this->transaction = $this->card->buy($amount, new Merchant());
     }
 
     /**
      * @Then I should be authorized to buy :amount GBP
      */
-    public function iShouldBeAuthorizedToBuyGBP($amount)
+    public function iShouldBeAuthorizedToBuyGBP(Money $amount)
     {
-        Assert::assertEquals($amount, $this->transaction->getAuthorisedAmount()->getAmount());
+        Assert::assertEquals($amount->getAmount(), $this->transaction->getAuthorisedAmount()->getAmount());
     }
 
     /**
      * @Then My available balance should be :amount GBP
      */
-    public function myAvailableBalanceShouldBeGbp($amount)
+    public function myAvailableBalanceShouldBeGbp(Money $amount)
     {
-        Assert::assertEquals($amount, $this->card->getAvailableBalance()->getAmount());
+        Assert::assertEquals($amount->getAmount(), $this->card->getAvailableBalance()->getAmount());
     }
 
     /**
      * @Then My blocked balance should be :amount GBP
      */
-    public function myBlockedBalanceShouldBeGbp($amount)
+    public function myBlockedBalanceShouldBeGbp(Money $amount)
     {
-        Assert::assertEquals($amount, $this->card->getBlockedBalance()->getAmount());
+        Assert::assertEquals($amount->getAmount(), $this->card->getBlockedBalance()->getAmount());
     }
 
     /**
      * @Given I have a card with :amountAvailable GBP in balance and :amountBlocked blocked
      */
-    public function iHaveACardWithGBPInBalanceAndBlocked($amountAvailable, $amountBlocked)
+    public function iHaveACardWithGBPInBalanceAndBlocked(Money $amountAvailable, Money $amountBlocked)
     {
-        $this->card = new Card(Money::GBP($amountAvailable), Money::GBP($amountBlocked));
+        $this->card = new Card($amountAvailable, $amountBlocked);
     }
 
     /**
      * @Given I had a card transaction with the amount of :amount GBP
      */
-    public function iHadACardTransactionWithTheAmountOfGbp($amount)
+    public function iHadACardTransactionWithTheAmountOfGbp(Money $amount)
     {
         $this->transaction = new Domain\Transaction\Transaction(
             $this->card,
-            Money::GBP($amount),
-            Money::GBP($amount),
-            Money::GBP($amount),
+            $amount,
+            $amount,
+            $amount,
             new Merchant(),
-            Money::GBP(0)
+            $this->makeAmountGBP($amount)
         );
     }
 
     /**
      * @When I request to capture :amount GBP
      */
-    public function iRequestToCaptureGBP($amount)
+    public function iRequestToCaptureGBP(Money $amount)
     {
         $this->capture = new Capture($this->transaction, new Merchant());
 
         try {
-            $this->capture->capture(Money::GBP($amount));
+            $this->capture->capture($amount);
         } catch (GreaterAmountException $greaterAmountException) {
         }
     }
@@ -142,9 +161,9 @@ class FeatureContext implements Context
     /**
      * @Given The card should have :amount GBP marked as blocked
      */
-    public function theCardShouldHaveGBPMarkedAsBlocked($amount)
+    public function theCardShouldHaveGBPMarkedAsBlocked(Money $amount)
     {
-        Assert::assertEquals($amount, $this->card->getBlockedBalance()->getAmount());
+        Assert::assertEquals($amount->getAmount(), $this->card->getBlockedBalance()->getAmount());
     }
 
     /**
@@ -158,25 +177,25 @@ class FeatureContext implements Context
     /**
      * @Given I refund the captured amount of :amount GBP
      */
-    public function iRefundTheCapturedAmountOfGBP($amount)
+    public function iRefundTheCapturedAmountOfGBP(Money $amount)
     {
-        $this->capture->refund(Money::GBP($amount));
+        $this->capture->refund($amount);
     }
 
     /**
      * @When I request to reverse :amount GBP
      */
-    public function iRequestToReverseGBP($amount)
+    public function iRequestToReverseGBP(Money $amount)
     {
         $reverse = new Reverse($this->transaction);
-        $reverse->reverse(Money::GBP($amount));
+        $reverse->reverse($amount);
     }
 
     /**
      * @Given The card should have :amount GBP available
      */
-    public function theCardShouldHaveGBPAvailable($amount)
+    public function theCardShouldHaveGBPAvailable(Money $amount)
     {
-        Assert::assertEquals($amount, $this->card->getAvailableBalance()->getAmount());
+        Assert::assertEquals($amount->getAmount(), $this->card->getAvailableBalance()->getAmount());
     }
 }
